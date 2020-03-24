@@ -1,0 +1,57 @@
+﻿@model CMRDP.Models.IndexViewModel
+@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="modal fade" id="ModalNotifications" tabindex="-1" role="dialog" aria-labelledby="ModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ModalTitle">Please wait...</h5>
+      </div>
+      <div class="modal-body" id="ModalBody">
+        ...
+      </div>
+    </div>
+  </div>
+</div>
+
+<form id="__AjaxAntiForgeryForm" action="#" method="post">@Html.AntiForgeryToken()</form>
+
+<script>
+    AddAntiForgeryToken = function (data) {
+        data.__RequestVerificationToken = $('#__AjaxAntiForgeryForm input[name=__RequestVerificationToken]').val();
+        return data;
+    };
+    function ConnectOnClick() {
+        $("#ModalNotifications").modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+        $("#ModalBody").empty().append("Please wait, attempting to determine if the device is online.");
+        var computerName = $( "#ComputerName option:selected" ).text();
+        $.ajax({
+            type: "post",
+            dataType: "text/html; charset=utf-8",
+            url: "/Home/WakeDevice?computerName=" + computerName,
+            data: AddAntiForgeryToken({ id: parseInt($(this).attr("title")) }),
+            complete: function (response) {
+                $("#ModalBody").empty().append(response.responseText);
+                $("#ModalTitle").empty().append("Complete");
+                window.location="/Home/GetRDPFile?computerName=" + computerName
+            }
+        });
+    }
+    
+</script>
+
+<div class="jumbotron">
+    <h1>Remote Connection Center</h1>
+    <p class="lead">Remote Connection Center will allow you to connect to devices you've used before in your organization. Simply select a device and click connect!</p>
+    @using (Html.BeginForm("Connect", "Home", FormMethod.Post, new { @class = "form-horizontal" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.DropDownList("ComputerName", Model.ComputerList, "Select Computer")
+        <input type="button" value="Connect" class="btn btn-default" onclick="ConnectOnClick()" />
+    }
+</div>
