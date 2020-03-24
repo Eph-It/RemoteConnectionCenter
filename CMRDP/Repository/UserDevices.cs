@@ -49,10 +49,30 @@ namespace CMRDP.Repository
               ,u.User_Name0 AS 'UserName'
 	          ,u.Full_Domain_Name0 AS 'UserFullDomainName'
 	          ,u.Windows_NT_Domain0 AS 'UserWindowsNTDomain'
-            FROM [CM_PS1].[dbo].[v_GS_SYSTEM_CONSOLE_USER] cu
+            FROM [v_GS_SYSTEM_CONSOLE_USER] cu
               JOIN CTE u ON cu.SystemConsoleUser0 = u.Unique_User_Name0
               JOIN v_R_System sy ON sy.ResourceID = cu.ResourceID
             ORDER BY cu.LastConsoleUse0 DESC
+        ";
+
+        private string GetUsersLastUsedExplorerQuery = @"
+            WITH CTE AS(
+	            SELECT * FROM v_R_User u
+	            WHERE u.User_Name0 = @username
+            )
+
+            SELECT sy.Name0 AS 'DeviceName'
+              ,sy.Full_Domain_Name0 AS 'DeviceFullDomainName'
+              ,sy.ResourceID AS 'DeviceResourceId'
+              ,u.User_Name0 AS 'UserName'
+	          ,u.Full_Domain_Name0 AS 'UserFullDomainName'
+	          ,u.Windows_NT_Domain0 AS 'UserWindowsNTDomain'
+            FROM v_GS_CCM_RECENTLY_USED_APPS cu
+              JOIN CTE u ON cu.LastUserName0 = u.Unique_User_Name0
+              JOIN v_R_System sy ON sy.ResourceID = cu.ResourceID
+			WHERE cu.ExplorerFileName0 = 'explorer.exe'
+			AND cu.LastUsedTime0 > DATEADD(Month, -3, GETUTCDATE())
+            ORDER BY cu.LastUsedTime0 DESC
         ";
 
         private string GetScriptQuery = "SELECT * FROM [vSMS_Scripts] WHERE ScriptName like @ScriptName";
@@ -113,6 +133,19 @@ namespace CMRDP.Repository
             using (var _sql = new SQL())
             {
                 var ConsoleDevices = _sql.Invoke(GetUsersConsoleDeviceQuery, SqlParams);
+                foreach (var result in ConsoleDevices)
+                {
+                    int resourceId = (int)result["DeviceResourceId"];
+                    if (returnList.Where(p => p.DeviceResourceId.Equals(resourceId)).FirstOrDefault() == null)
+                    {
+                        returnList.Add(NewDevice(result));
+                    }
+                }
+            }
+
+            using (var _sql = new SQL())
+            {
+                var ConsoleDevices = _sql.Invoke(GetUsersLastUsedExplorerQuery, SqlParams);
                 foreach (var result in ConsoleDevices)
                 {
                     int resourceId = (int)result["DeviceResourceId"];
