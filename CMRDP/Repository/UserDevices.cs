@@ -101,11 +101,16 @@ namespace CMRDP.Repository
 
         //private string ScriptParams = @"<ScriptContent ScriptGuid='{0}'><ScriptVersion>{1}</ScriptVersion><ScriptType>{2}</ScriptType><ScriptHash ScriptHashAlg='{3}'>{4}</ScriptHash><ScriptParameters><ScriptParameter ParameterGroupGuid="""" ParameterGroupName=""PG_"" ParameterName=""Mac"" ParameterDataType=""System.String"" ParameterVisibility=""0"" ParameterType=""1"" ParameterValue=""{5}""/></ScriptParameters><ParameterGroupHash ParameterHashAlg='SHA256'>86c21158bac3025fb8069be567dfc1e5405aefa95a075c8954c161eb769aa18f</ParameterGroupHash></ScriptContent>";
 
-        private RDPDevice NewDevice(Dictionary<string, object> result)
+        private RDPDevice NewDevice(Dictionary<string, object> result, bool isPrimary = false)
         {
+            string deviceDisplayName = result["DeviceName"].ToString();
+            if (isPrimary)
+            {
+                deviceDisplayName = deviceDisplayName + " (Primary Device)";
+            }
             var tempDevice = new RDPDevice()
             {
-                DeviceDisplayName = $"{result["DeviceName"].ToString()} (Primary Device)",
+                DeviceDisplayName = deviceDisplayName,
                 DeviceName = result["DeviceName"].ToString(),
                 DeviceResourceId = (int)result["DeviceResourceId"],
                 FQDN = $"{result["DeviceName"].ToString()}.{result["DeviceFullDomainName"].ToString()}"
@@ -126,7 +131,7 @@ namespace CMRDP.Repository
                 var primaryDevices = _sql.Invoke(GetUsersPrimaryDeviceQuery, SqlParams);
                 foreach (var result in primaryDevices)
                 {
-                    returnList.Add(NewDevice(result));
+                    returnList.Add(NewDevice(result, true));
                 }
             }
 
