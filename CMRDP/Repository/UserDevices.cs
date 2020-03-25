@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using CMRDP.Models;
+using Serilog;
 
 namespace CMRDP.Repository
 {
@@ -230,6 +231,7 @@ namespace CMRDP.Repository
             var settings = new RDPSettings();
             if (DeviceOnline(resourceId))
             {
+                Log.Information("Device found to be online. Will not wake up.");
                 return "Device is online and ready for RDP. Please run the downloaded file called Default.rdp";
             }
 
@@ -237,6 +239,7 @@ namespace CMRDP.Repository
 
             if(peerList.Count == 0)
             {
+                Log.Information("Device not online and no peers found.");
                 return "Device does not show online and no peers found. You can try running the Default.rdp file but the device probably can't be turned on.";
             }
 
@@ -244,6 +247,7 @@ namespace CMRDP.Repository
 
             if(MACList.Count == 0)
             {
+                Log.Information("MAC Address for device not found. This is required for WOL");
                 return "Device does not show online and no MAC address was found. You can try running the Default.rdp file but the device probably can't be turned on.";
             }
 
@@ -268,6 +272,7 @@ namespace CMRDP.Repository
 
             if(scriptInformation == null)
             {
+                Log.Information("Could not find WOL script");
                 return "Device does not show online and no script was found to turn it on. You can try running the Default.rdp file but the device probably can't be turned on.";
             }
             string scriptParameters = $"<ScriptParameters><ScriptParameter ParameterGroupGuid=\"\" ParameterGroupName=\"PG_\" ParameterName=\"Macs\" ParameterDataType=\"System.String\" ParameterVisibility=\"0\" ParameterType=\"0\" ParameterValue=\"{macs}\"/></ScriptParameters>";
@@ -297,7 +302,9 @@ namespace CMRDP.Repository
                 uintResourceIds.Add(Convert.ToUInt32(r));
             }
             wmiDictionary.Add("TargetResourceIDs", uintResourceIds.ToArray());
+            Log.Information("Attempting to run script on these resourceIds {uintResourceIds}", uintResourceIds);
             var i = wmiUtility.InvokeClassMethod("SMS_ClientOperation", "InitiateClientOperationEx", wmiDictionary);
+            Log.Information("Successfully sent request to start script");
             return "Device does not show online so we are attempting to turn it on. You can run the Default.rdp file that was downloaded in 2-3 minutes to log into your computer. Thank you.";
             
         }

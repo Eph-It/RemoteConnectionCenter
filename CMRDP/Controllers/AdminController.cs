@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using Serilog;
 
 namespace CMRDP.Controllers
 {
@@ -34,6 +35,7 @@ namespace CMRDP.Controllers
         [ValidateAntiForgeryToken()]
         public ActionResult Index(RDPSettingsViewModel rdpSettings)
         {
+            Log.Information($"User {User.Identity.Name} is setting these settings: {{@rdpSettings}}", rdpSettings);
             _settings.AdminGroups = rdpSettings.AdminGroups;
             _settings.AdminUsers = rdpSettings.AdminUsers;
             _settings.AllowedGroups = rdpSettings.AllowedGroups;

@@ -7,6 +7,7 @@ using System.Web.Mvc;
 using CMRDP.Repository;
 using System.Text;
 using System.IO;
+using Serilog;
 
 namespace CMRDP.Controllers
 {
@@ -35,6 +36,7 @@ namespace CMRDP.Controllers
         [HttpPost]
         public string WakeDevice(string computerName)
         {
+            Log.Information($"User {User.Identity.Name} is requesting to RDP to {computerName}");
             var userDevices = new UserDevices(User.Identity.Name);
             foreach(var d in userDevices.GetUserDevices())
             {
@@ -42,14 +44,17 @@ namespace CMRDP.Controllers
                 {
                     try
                     {
+                        Log.Information("Found device - checking if it needs to wake up");
                         return userDevices.WOL(d.DeviceResourceId);
                     }
-                    catch
+                    catch(Exception ex)
                     {
+                        Log.Error(ex, "Error waking up device");
                         return "Error trying to turn on device. You can still run the Default.rdp file to try and connect.";
                     }
                 }
             }
+            Log.Information("Device not found! Returning");
             return string.Empty;
         }
         public ActionResult GetRDPFile(string computerName)
