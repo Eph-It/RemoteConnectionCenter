@@ -25,6 +25,10 @@ namespace CMRDP.Repository
             }
         }
 
+        private string GetDeviceList = @"Select Name0 FROM v_R_System";
+
+        private string GetResourceIds = @"Select ResourceId FROM v_R_System where Name0 = @CompName";
+
         private string GetUsersPrimaryDeviceQuery = @"
             SELECT sy.Name0 AS 'DeviceName'
               ,sy.Full_Domain_Name0 AS 'DeviceFullDomainName'
@@ -117,6 +121,39 @@ namespace CMRDP.Repository
                 FQDN = $"{result["DeviceName"].ToString()}.{result["DeviceFullDomainName"].ToString()}"
             };
             return tempDevice;
+        }
+
+        public int GetResourceId(string computerName)
+        {
+            Dictionary<string, object> SqlParams = new Dictionary<string, object>()
+            {
+                { "@CompName", computerName }
+            };
+            using (var _sql = new SQL())
+            {
+                var resourceIds = _sql.Invoke(GetResourceIds, SqlParams);
+                foreach (var result in resourceIds)
+                {
+                    return (int)result["ResourceId"];
+                }
+            }
+            return 0;
+        }
+
+        public List<string> GetDevices()
+        {
+            var returnList = new List<string>();
+
+            using(var _sql = new SQL())
+            {
+                var deviceList = _sql.Invoke(GetDeviceList);
+                foreach(var result in deviceList)
+                {
+                    returnList.Add(result["Name0"].ToString());
+                }
+            }
+
+            return returnList;
         }
 
         public List<RDPDevice> GetUserDevices()
@@ -225,11 +262,12 @@ namespace CMRDP.Repository
             return returnList;
         }
 
-        public string WOL(int resourceId)
+        public string WOL(int resourceId, bool alwaysWake = false)
         {
             string returnMessage = string.Empty;
             var settings = new RDPSettings();
-            if (DeviceOnline(resourceId))
+            bool deviceIsOnline = DeviceOnline(resourceId);
+            if (deviceIsOnline && alwaysWake == false)
             {
                 Log.Information("Device found to be online. Will not wake up.");
                 return "Device is online and ready for RDP. Please run the downloaded file called Default.rdp";

@@ -1,12 +1,10 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Web;
-using Microsoft.Win32;
-using Serilog;
 
-namespace CMRDP.Models
+namespace CMRDP
 {
     public class RDPSettings
     {
@@ -18,14 +16,14 @@ namespace CMRDP.Models
             {
                 _appPrefs = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\CMRDP", true);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log.Error(ex, "Could not open registry key in HKLM - Could be a permissions issue");
             }
             _userAppPrefs = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\CMRDP", true);
-            if(_appPrefs != null || _userAppPrefs != null)
+            if (_appPrefs != null || _userAppPrefs != null)
             {
-                if(String.IsNullOrEmpty(AdminGroups) && String.IsNullOrEmpty(AdminUsers))
+                if (String.IsNullOrEmpty(AdminGroups) && String.IsNullOrEmpty(AdminUsers))
                 {
                     Configured = false;
                 }
@@ -33,12 +31,12 @@ namespace CMRDP.Models
                 {
                     Configured = true;
                 }
-                
+
             }
         }
         private string GetPref(string name)
         {
-            if(_appPrefs != null)
+            if (_appPrefs != null)
             {
                 try
                 {
@@ -53,10 +51,10 @@ namespace CMRDP.Models
                     Log.Error(ex, "Error getting registry value from HKLM but key exists. Make sure the IIS app pool account has read permissions to this key if you want to use it. Falling back to HKCU.");
                 }
             }
-            if(_userAppPrefs != null)
+            if (_userAppPrefs != null)
             {
                 var result = _userAppPrefs.GetValue(name);
-                if(result != null)
+                if (result != null)
                 {
                     return result.ToString();
                 }
@@ -74,7 +72,7 @@ namespace CMRDP.Models
         private void SetPref(string name, string value)
         {
             if (String.IsNullOrEmpty(value)) { return; }
-            if(_appPrefs == null)
+            if (_appPrefs == null)
             {
                 try
                 {
@@ -93,7 +91,7 @@ namespace CMRDP.Models
                     _appPrefs.SetValue(name, value);
                     return;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Log.Error(ex, "Error setting registry value in HKLM\\SOFTWARE but CMRDP key exists - Will fall back to HKCU to set the value.");
                 }
@@ -138,8 +136,8 @@ namespace CMRDP.Models
             if (!String.IsNullOrEmpty(value))
             {
                 var values = value.Split(',');
-                
-                foreach(var i in values)
+
+                foreach (var i in values)
                 {
                     returnList.Add(i.Trim());
                 }
@@ -195,6 +193,16 @@ namespace CMRDP.Models
             get => GetPref("AllowedUsers");
             set => SetPref("AllowedUsers", value);
         }
+        public string TextBoxUsers
+        {
+            get => GetPref("TextBoxUsers");
+            set => SetPref("TextBoxUsers", value);
+        }
+        public string TextBoxGroups
+        {
+            get => GetPref("TextBoxGroups");
+            set => SetPref("TextBoxGroups", value);
+        }
         public string CMScriptName
         {
             get => GetPref("CMScriptName");
@@ -204,5 +212,8 @@ namespace CMRDP.Models
         public string[] AllowedGroupsArray => GetArrayValues(AllowedGroups);
         public string[] AdminGroupsArray => GetArrayValues(AdminGroups);
         public string[] AdminUsersArray => GetArrayValues(AdminUsers);
+        public string[] TextBoxUsersArray => GetArrayValues(TextBoxUsers);
+        public string[] TextBoxGroupsArray => GetArrayValues(TextBoxGroups);
     }
+
 }

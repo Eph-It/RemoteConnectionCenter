@@ -31,5 +31,9 @@ namespace CMRDP.Models
         [Display(Name = "ConfigMgr WOL Script Name")]
         [Required]
         public string CMScriptName { get; set; }
+        [Display(Name = "Text Box Computer Name Users (comma separated list)")]
+        public string UsersByComputerName { get; set; }
+        [Display(Name = "Text Box Computer Name Groups (comma separated list)")]
+        public string GroupsByComputerName { get; set; }
     }
 }

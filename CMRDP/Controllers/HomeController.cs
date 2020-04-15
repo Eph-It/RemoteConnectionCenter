@@ -8,6 +8,7 @@ using CMRDP.Repository;
 using System.Text;
 using System.IO;
 using Serilog;
+using LazyCache;
 
 namespace CMRDP.Controllers
 {
@@ -34,11 +35,40 @@ namespace CMRDP.Controllers
             return View(vm);
         }
         [HttpPost]
-        public string WakeDevice(string computerName)
+        public JsonResult GetComputerName(string computerName)
         {
-            Log.Information($"User {User.Identity.Name} is requesting to RDP to {computerName}");
             var userDevices = new UserDevices(User.Identity.Name);
-            foreach(var d in userDevices.GetUserDevices())
+            // Cache has a default time limit of 20 minutes, so will get new results every 20 minutes
+            IAppCache cache = new CachingService();
+            Func<List<string>> complexObjectFactory = () => userDevices.GetDevices();
+            List<string> fullDeviceList = cache.GetOrAdd("CMComputerList", complexObjectFactory);
+
+
+            var returnList = fullDeviceList.Where(p => p.ToLower().Contains(computerName.ToLower())); //.Select(p => new { label = p });
+
+            return Json(returnList.Take(50), JsonRequestBehavior.AllowGet);
+        }
+        [HttpPost]
+        public string WakeDevice(string computerName, bool alwaysWake = false)
+        {
+            Log.Information($"User {User.Identity.Name} is requesting to wake up {computerName}");
+            var userDevices = new UserDevices(User.Identity.Name);
+            var vm = new IndexViewModel();
+            if (alwaysWake && vm.GetsTextBox)
+            {
+                var resId = userDevices.GetResourceId(computerName);
+                try
+                {
+                    Log.Information("Found device - checking if it needs to wake up");
+                    return userDevices.WOL(resId, alwaysWake);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error waking up device");
+                    return "Error trying to turn on device. You can still run the Default.rdp file to try and connect.";
+                }
+            }
+            foreach (var d in userDevices.GetUserDevices())
             {
                 if (d.DeviceDisplayName.Equals(computerName))
                 {
@@ -54,13 +84,13 @@ namespace CMRDP.Controllers
                     }
                 }
             }
+            
             Log.Information("Device not found! Returning");
             return string.Empty;
         }
-        public ActionResult GetRDPFile(string computerName)
+        public ActionResult GetRDPFile(string computerName = "", string fullComputerName = "")
         {
             var userDevices = new UserDevices(User.Identity.Name);
-            string fullComputerName = "";
             foreach (var d in userDevices.GetUserDevices())
             {
                 if (d.DeviceDisplayName.Equals(computerName))

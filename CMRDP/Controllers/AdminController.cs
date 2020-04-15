@@ -29,6 +29,8 @@ namespace CMRDP.Controllers
             vm.SiteCode = _settings.SiteCode;
             vm.WMIServer = _settings.WMIServer;
             vm.CMScriptName = _settings.CMScriptName;
+            vm.UsersByComputerName = _settings.TextBoxUsers;
+            vm.GroupsByComputerName = _settings.TextBoxGroups;
             return View(vm);
         }
         [HttpPost]
@@ -45,7 +47,8 @@ namespace CMRDP.Controllers
             _settings.SiteCode = rdpSettings.SiteCode;
             _settings.WMIServer = rdpSettings.WMIServer;
             _settings.CMScriptName = rdpSettings.CMScriptName;
-
+            _settings.TextBoxGroups = rdpSettings.GroupsByComputerName;
+            _settings.TextBoxUsers = rdpSettings.UsersByComputerName;
             return RedirectToAction("Index");
         }
     }

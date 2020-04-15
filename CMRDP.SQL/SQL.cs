@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using CMRDP.Models;
 using System.Data;
 using System.Data.SqlClient;
 
-namespace CMRDP.Repository
+namespace CMRDP
 {
     public class SQL : IDisposable
     {
@@ -20,22 +17,26 @@ namespace CMRDP.Repository
 
         private void OpenConnection()
         {
-            if(_connection.State != ConnectionState.Open)
+            if (_connection.State != ConnectionState.Open)
             {
                 _connection.Open();
             }
         }
 
-        private SqlCommand GetCommand(string commandText, Dictionary<string, object>Params = null)
+        private SqlCommand GetCommand(string commandText, Dictionary<string, object> Params = null)
         {
             var ret = new SqlCommand(commandText, _connection)
             {
                 CommandType = CommandType.Text
             };
-            foreach(var key in Params?.Keys)
+            if(Params != null)
             {
-                ret.Parameters.AddWithValue(key, Params[key]);
+                foreach (var key in Params?.Keys)
+                {
+                    ret.Parameters.AddWithValue(key, Params[key]);
+                }
             }
+            
             return ret;
         }
 
@@ -46,7 +47,7 @@ namespace CMRDP.Repository
             while (read.Read())
             {
                 var dic = new Dictionary<string, object>();
-                for(int i = 0; i < read.FieldCount; i++)
+                for (int i = 0; i < read.FieldCount; i++)
                 {
                     dic.Add(read.GetName(i), read.GetValue(i));
                 }

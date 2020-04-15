@@ -17,19 +17,21 @@
 </div>
 
 <form id="__AjaxAntiForgeryForm" action="#" method="post">@Html.AntiForgeryToken()</form>
-
+@section scripts {
 <script>
     AddAntiForgeryToken = function (data) {
         data.__RequestVerificationToken = $('#__AjaxAntiForgeryForm input[name=__RequestVerificationToken]').val();
         return data;
     };
     function ConnectOnClick() {
+        var computerName = $("#ComputerName option:selected").text();
+        if (computerName == "Select Computer") { return; }
         $("#ModalNotifications").modal({
             backdrop: 'static',
-            keyboard: false
+            keyboard: true
         });
         $("#ModalBody").empty().append("Please wait, attempting to determine if the device is online.");
-        var computerName = $( "#ComputerName option:selected" ).text();
+        
         $.ajax({
             type: "post",
             dataType: "text/html; charset=utf-8",
@@ -37,21 +39,82 @@
             data: AddAntiForgeryToken({ id: parseInt($(this).attr("title")) }),
             complete: function (response) {
                 $("#ModalBody").empty().append(response.responseText);
-                $("#ModalTitle").empty().append("Complete");
+                $("#ModalTitle").empty().append("Complete (Escape to exit)");
                 window.location="/Home/GetRDPFile?computerName=" + computerName
             }
         });
     }
-    
+    function TextBoxConnectOnClick() {
+        $("#ModalNotifications").modal({
+            backdrop: 'static',
+            keyboard: true
+        });
+        $("#ModalBody").empty().append("Please wait, attempting to determine if the device is online.");
+        var computerName = $("#ComputerNames").val();
+        $.ajax({
+            type: "post",
+            dataType: "text/html; charset=utf-8",
+            url: "/Home/WakeDevice?alwaysWake=true&computerName=" + computerName,
+            data: AddAntiForgeryToken({ id: parseInt($(this).attr("title")) }),
+            complete: function (response) {
+                $("#ModalBody").empty().append(response.responseText);
+                $("#ModalTitle").empty().append("Complete (Escape to exit)");
+                window.location = "/Home/GetRDPFile?fullComputerName=" + computerName
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        $("#ComputerNames").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: "/Home/GetComputerName",
+                    type: "POST",
+                    dataType: "json",
+                    data: { computerName: request.term },
+                    success: function (data) {
+                        response($.map(data, function (item) {
+                            return { label: item, value: item };
+                        }))
+                    }
+                })
+            },
+            messages: {
+                noResults: "", results: ""
+            }
+        });
+    })
 </script>
+}
 
 <div class="jumbotron">
     <h1>Remote Connection Center</h1>
     <p class="lead">Remote Connection Center will allow you to connect to devices you've used before in your organization. Simply select a device and click connect!</p>
-    @using (Html.BeginForm("Connect", "Home", FormMethod.Post, new { @class = "form-horizontal" }))
+    @if (Model.GetsDropDown)
     {
-        @Html.AntiForgeryToken()
-        @Html.DropDownList("ComputerName", Model.ComputerList, "Select Computer")
-        <input type="button" value="Connect" class="btn btn-default" onclick="ConnectOnClick()" />
+        using (Html.BeginForm("Connect", "Home", FormMethod.Post, new { @class = "form-horizontal" }))
+        {
+            @Html.AntiForgeryToken()
+            <label>Select recent computer:</label>
+            <div>
+                @Html.DropDownList("ComputerName", Model.ComputerList, "Select Computer")
+                <input type="button" value="Connect" class="btn btn-default" onclick="ConnectOnClick()" />
+            </div>
+            
+        }
     }
+    @if (Model.GetsTextBox)
+    {
+        using (Html.BeginForm("Connect", "Home", FormMethod.Post, new { @class = "form-horizontal" }))
+        {
+            @Html.AntiForgeryToken()
+            <label>Manuall enter computer name:</label>
+            <div>
+                <input id="ComputerNames" class="form-control" style="float:left" />
+                <input type="button" value="Connect" class="btn btn-default" onclick="TextBoxConnectOnClick()" />
+            </div>
+            
+        }
+    }
+
 </div>

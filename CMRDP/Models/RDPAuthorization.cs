@@ -16,7 +16,6 @@ namespace CMRDP.Models
             {
                 return true;
             }
-
             // First check admins as they are authorized everywhere
             foreach (string g in rdpSettings.AdminGroupsArray)
             {
@@ -43,6 +42,20 @@ namespace CMRDP.Models
                     }
                 }
                 foreach (string use in rdpSettings.AllowedUsersArray)
+                {
+                    if (httpContext.User.Identity.Name.Equals(use, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                foreach (string g in rdpSettings.TextBoxGroupsArray)
+                {
+                    if (httpContext.User.IsInRole(g))
+                    {
+                        return true;
+                    }
+                }
+                foreach (string use in rdpSettings.TextBoxUsersArray)
                 {
                     if (httpContext.User.Identity.Name.Equals(use, StringComparison.OrdinalIgnoreCase))
                     {
