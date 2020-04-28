@@ -31,6 +31,8 @@ After the user selects a device, we look to see if the device is online by using
 5) Copy the script on the admin page (at the bottom) to Configuration Manager and then put the name of the script in the portal.
 6) Use the portal!
 
+The user you pick to have running the portal will require Run Scripts permission and read-only access to the CM database.
+
 If you encounter any errors, logs are located at ```IISUserTempFolder```\CMRDP```<Date>```.log.
 
 If you find an error you cannot solve, feel free to log an issue and I'll look right into it!
